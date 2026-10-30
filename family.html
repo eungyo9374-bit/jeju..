@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>가족 나들이 제주 역사 탐방</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<style>
+  :root { --bg:#fbf7f0; --card:#fff; --ink:#2a2622; --sub:#7a6f64; --line:#eadfce; --accent:#e07a2f; --accent-soft:#fdeedd; --green:#2f8f6b; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#1a1714; --card:#24201c; --ink:#f1e9de; --sub:#b3a595; --line:#3a332c; --accent:#f09a55; --accent-soft:#3a2a1c; --green:#58c49b; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif; background:var(--bg); color:var(--ink); line-height:1.5; }
+  .wrap { max-width:1180px; margin:0 auto; padding:0 20px; }
+  nav { display:flex; justify-content:flex-end; padding:10px 0 0; font-size:13px; }
+  a { color:var(--accent); }
+  .hero { padding:14px 0 18px; }
+  .hero h1 { margin:0; font-size:28px; }
+  .hero p { margin:6px 0 0; color:var(--sub); }
+  .planner { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); }
+  .planner h2 { grid-column:1/-1; margin:0; font-size:16px; }
+  .field label.t { display:block; font-size:13px; color:var(--sub); margin-bottom:6px; }
+  select { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); font:inherit; }
+  .chips { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px; }
+  .chips label { cursor:pointer; }
+  .chips input { position:absolute; opacity:0; }
+  .chips span { display:inline-block; padding:7px 13px; border:1px solid var(--line); border-radius:99px; font-size:14px; background:var(--bg); }
+  .chips input:checked + span { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700; }
+  .chips input:focus-visible + span { outline:2px solid var(--accent); }
+  .go { grid-column:1/-1; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  button { font:inherit; cursor:pointer; }
+  .primary { background:var(--accent); color:#fff; border:0; border-radius:12px; padding:11px 22px; font-weight:700; font-size:15px; }
+  .ghost { background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:12px; padding:10px 16px; }
+  .note { color:var(--sub); font-size:12.5px; }
+  #result { margin:22px 0 40px; }
+  .summary { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 16px; }
+  .stat b { display:block; font-size:19px; }
+  .stat small { color:var(--sub); }
+  .bar { height:8px; background:var(--line); border-radius:9px; overflow:hidden; margin-top:6px; width:150px; }
+  .bar i { display:block; height:100%; background:var(--green); width:0; transition:width .3s; }
+  .cols { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,.9fr); gap:18px; align-items:start; }
+  #map { height:520px; border-radius:16px; border:1px solid var(--line); z-index:0; }
+  .mapcol { position:sticky; top:12px; }
+  .card { display:flex; gap:14px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:12px; }
+  .card.done { border-color:var(--green); }
+  .num { flex:none; width:34px; height:34px; border-radius:50%; background:var(--accent); color:#fff; text-align:center; line-height:34px; font-weight:700; }
+  .card.done .num { background:var(--green); }
+  .main { flex:1; min-width:0; }
+  .top { display:flex; gap:8px; align-items:center; flex-wrap:wrap; cursor:pointer; }
+  .top h3 { margin:0; font-size:18px; }
+  .tag { font-size:12px; padding:2px 9px; border-radius:99px; background:var(--accent-soft); color:var(--accent); }
+  .move { font-size:13px; color:var(--sub); margin:2px 0 8px; }
+  .story { margin:0 0 8px; font-size:14.5px; white-space:pre-wrap; word-break:keep-all; }
+  .more { background:none; border:0; color:var(--accent); padding:0; font-size:13px; }
+  .mission { background:var(--accent-soft); border-radius:10px; padding:8px 12px; font-size:13.5px; margin:8px 0; }
+  .addr { font-size:13px; color:var(--sub); }
+  .acts { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin-top:10px; font-size:13px; }
+  .acts button { background:none; border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:3px 10px; font-size:12.5px; }
+  .acts label { cursor:pointer; font-weight:700; color:var(--green); }
+  .tips { background:var(--card); border:1px dashed var(--line); border-radius:14px; padding:12px 16px; font-size:13.5px; color:var(--sub); margin-top:6px; }
+  .empty { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:30px; text-align:center; color:var(--sub); }
+  .pin-n { background:var(--accent); color:#fff; border:2px solid #fff; border-radius:50%; text-align:center; font:700 13px/22px sans-serif; box-shadow:0 1px 4px rgba(0,0,0,.4); }
+  .pin-s { font-size:26px; line-height:26px; text-shadow:0 1px 3px rgba(0,0,0,.5); }
+  footer { padding:0 0 30px; color:var(--sub); font-size:12px; }
+  @media (max-width:860px) { .cols { grid-template-columns:1fr; } .mapcol { position:static; order:-1; } #map { height:300px; } }
+  @media print { nav, .planner, .mapcol, .acts button, .more { display:none !important; } .cols { display:block; } .card { break-inside:avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><a href="index.html">전체 자료 조회 · 찜 코스 →</a></nav>
+  <header class="hero">
+    <h1>👨‍👩‍👧 가족 나들이 제주 역사 탐방</h1>
+    <p>아이 나이와 출발지를 고르면, 제주 역사문화 자료 120곳 중에서 하루 나들이 코스를 짜 드려요.</p>
+  </header>
+
+  <section class="planner" aria-label="코스 설정">
+    <h2>어떤 나들이를 원하세요?</h2>
+    <div class="field"><label class="t" for="age">함께 가는 아이</label>
+      <select id="age">
+        <option value="toddler">유아 (~7세) · 3곳, 짧은 설명</option>
+        <option value="kid" selected>초등학생 · 4곳, 보통 설명</option>
+        <option value="teen">고학년·청소년 · 5곳, 자세한 설명</option>
+      </select></div>
+    <div class="field"><label class="t" for="stops">방문할 곳 수</label>
+      <select id="stops"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select></div>
+    <div class="field"><label class="t" for="start">출발지</label>
+      <select id="start">
+        <option value="air">제주국제공항</option><option value="city">제주시청</option>
+        <option value="seo">서귀포시청</option><option value="me">내 위치 (위치 허용 필요)</option>
+      </select></div>
+    <div class="field"><label class="t" for="region">지역</label>
+      <select id="region"><option value="all">제주 전체</option><option value="제주시">제주시 쪽만</option><option value="서귀포시">서귀포시 쪽만</option></select></div>
+    <div class="chips" id="chips" role="group" aria-label="테마"></div>
+    <div class="go">
+      <button class="primary" id="make">코스 만들기</button>
+      <button class="ghost" id="again">🎲 다시 뽑기</button>
+      <button class="ghost" id="print">🖨 인쇄</button>
+      <span class="note" id="msg"></span>
+    </div>
+  </section>
+
+  <section id="result" hidden>
+    <div class="summary" id="summary"></div>
+    <div class="cols">
+      <div id="cards"></div>
+      <div class="mapcol"><div id="map"></div></div>
+    </div>
+  </section>
+  <footer>자료: 제주특별자치도 제주역사문화 일반정보·위치정보 (2022-12-09). 이동거리는 직선거리의 1.35배, 평균 40km/h로 어림한 값이에요.</footer>
+</div>
+
+<script type="module">
+const DATA = await fetch("/api/culture").then(r => { if (!r.ok) throw new Error("데이터를 불러오지 못했습니다 (" + r.status + ")"); return r.json(); });
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const THEMES = {
+  nature:  { label: "🌊 바다·자연",       dirs: ["자연", "관광"],                                   mission: "주변에서 돌·바람·바다·나무의 모양을 하나씩 찾아 사진으로 남겨 보세요." },
+  life:    { label: "🏠 옛 사람들의 삶",   dirs: ["의식주", "생산기술", "사회", "민속공예", "방언"], mission: "옛날 사람들은 여기서 어떻게 살았을까요? 가족과 상상해서 이야기해 보세요." },
+  history: { label: "🏺 유적·역사",        dirs: ["역사", "통과의례", "문화"],                       mission: "가장 오래돼 보이는 것을 찾아보고, 몇 년쯤 됐을지 맞혀 보세요." },
+  belief:  { label: "⛩ 신앙·이야기",      dirs: ["무속", "민간신앙", "신화/전설"],                  mission: "사람들이 이곳에서 왜 소원을 빌었을지 가족끼리 이야기해 보세요." },
+  etc:     { label: "🔎 더 둘러보기",      dirs: ["기타"],                                           mission: "가장 인상 깊은 것 한 가지를 골라 그림이나 사진으로 남겨 보세요." }
+};
+DATA.forEach(d => d.theme = Object.keys(THEMES).find(k => THEMES[k].dirs.includes(d.dir1)) || "etc");
+$("#chips").innerHTML = Object.entries(THEMES).map(([k, t]) => `<label><input type="checkbox" value="${k}" checked><span>${t.label}</span></label>`).join("");
+
+const STARTS = { air: { name: "제주국제공항", lat: 33.5113, lng: 126.4930 }, city: { name: "제주시청", lat: 33.4996, lng: 126.5312 }, seo: { name: "서귀포시청", lat: 33.2531, lng: 126.5598 } };
+const AGE = { toddler: { stops: 3, len: 80 }, kid: { stops: 4, len: 150 }, teen: { stops: 5, len: 300 } };
+const VISIT_MIN = 40;
+
+let done = {};
+try { done = JSON.parse(localStorage.getItem("jejuFamilyDone")) || {}; } catch (e) {}
+const saveDone = () => { try { localStorage.setItem("jejuFamilyDone", JSON.stringify(done)); } catch (e) {} };
+
+const km = (a, b) => {
+  const r = Math.PI / 180, dLa = (b.lat - a.lat) * r, dLn = (b.lng - a.lng) * r;
+  const h = Math.sin(dLa / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLn / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+};
+const road = (a, b) => km(a, b) * 1.35;
+const mins = k => Math.max(5, Math.round(k / 40 * 60));
+const clean = t => String(t || "").replace(/\(중략\)/g, " … ").replace(/[　\s]+/g, " ").trim();
+const clip = (t, n) => { t = clean(t); if (t.length <= n) return t; const cut = t.slice(0, n), sp = cut.lastIndexOf(" "); return cut.slice(0, sp > n * .6 ? sp : n) + "…"; };
+const fmtMin = m => m >= 60 ? `${Math.floor(m / 60)}시간${m % 60 ? " " + (m % 60) + "분" : ""}` : `${m}분`;
+
+let start = STARTS.air, plan = [];
+
+function candidates() {
+  const th = new Set([...document.querySelectorAll("#chips input:checked")].map(i => i.value)), rg = $("#region").value;
+  return DATA.filter(d => th.has(d.theme) && (rg === "all" || d.addr.includes(rg)));
+}
+const tooClose = (list, d) => list.some(x => x.id === d.id || km(x, d) < 0.3);
+
+function pick(n, jitter) {
+  const all = candidates(), chosen = [], used = new Set();
+  let cur = start;
+  for (let i = 0; i < n; i++) {
+    const pool = all.filter(d => !tooClose(chosen, d)).map(d => ({ d, s: km(cur, d) * (used.has(d.theme) ? 1.6 : 1) })).sort((a, b) => a.s - b.s);
+    if (!pool.length) break;
+    const spread = i === 0 ? (jitter ? 5 : 1) : (jitter ? 2 : 1);
+    const p = pool[Math.floor(Math.random() * Math.min(spread, pool.length))].d;
+    chosen.push(p); used.add(p.theme); cur = p;
+  }
+  return chosen;
+}
+
+function swap(i) {
+  const prev = i ? plan[i - 1] : start, others = plan.filter((_, j) => j !== i);
+  const pool = candidates().filter(d => !tooClose(others, d) && d.id !== plan[i].id).sort((a, b) => km(prev, a) - km(prev, b));
+  if (!pool.length) { $("#msg").textContent = "바꿀 수 있는 다른 장소가 없어요. 테마나 지역을 넓혀 보세요."; return; }
+  plan[i] = pool[Math.floor(Math.random() * Math.min(3, pool.length))];
+  draw();
+}
+
+// ---- 지도 ----
+const map = L.map("map").setView([33.38, 126.55], 10);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap" }).addTo(map);
+const layer = L.layerGroup().addTo(map);
+const markers = [];
+
+function drawMap() {
+  layer.clearLayers(); markers.length = 0;
+  const pts = [[start.lat, start.lng], ...plan.map(d => [d.lat, d.lng])];
+  L.polyline(pts, { color: "#e07a2f", weight: 4, opacity: .85 }).addTo(layer);
+  L.marker(pts[0], { icon: L.divIcon({ className: "", html: '<div class="pin-s">🚩</div>', iconSize: [26, 26], iconAnchor: [6, 24] }) })
+    .bindTooltip("출발: " + start.name).addTo(layer);
+  plan.forEach((d, i) => {
+    const m = L.marker([d.lat, d.lng], { icon: L.divIcon({ className: "", html: `<div class="pin-n">${i + 1}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] }) })
+      .bindTooltip(d.name).addTo(layer).on("click", () => document.querySelector(`.card[data-i="${i}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    markers.push(m);
+  });
+  map.fitBounds(L.latLngBounds(pts), { padding: [40, 40], maxZoom: 13 });
+}
+
+// ---- 화면 ----
+function draw() {
+  $("#result").hidden = false;
+  if (!plan.length) {
+    $("#summary").innerHTML = ""; layer.clearLayers();
+    $("#cards").innerHTML = '<div class="empty">조건에 맞는 장소가 없어요. 테마를 더 고르거나 지역을 “제주 전체”로 바꿔 보세요.</div>';
+    return;
+  }
+  const len = AGE[$("#age").value].len;
+  let driveKm = 0, driveMin = 0;
+  const cards = plan.map((d, i) => {
+    const prev = i ? plan[i - 1] : start, rk = road(prev, d), mm = mins(rk);
+    driveKm += rk; driveMin += mm;
+    const t = THEMES[d.theme], full = clean(d.content), short = clip(d.content, len), long = full.length > short.length;
+    return `<article class="card${done[d.id] ? " done" : ""}" data-i="${i}">
+      <div class="num">${i + 1}</div>
+      <div class="main">
+        <div class="top" data-focus="${i}"><h3>${esc(d.name)}</h3><span class="tag">${t.label}</span></div>
+        <div class="move">🚗 ${i ? "앞 장소에서" : esc(start.name) + "에서"} 약 ${rk.toFixed(1)}km · ${fmtMin(mm)}</div>
+        <p class="story" data-short="${esc(short)}" data-full="${esc(full)}">${esc(short)}</p>
+        ${long ? '<button class="more" data-more>더 읽기 ▾</button>' : ""}
+        <div class="mission">🎒 <b>탐방 미션</b> · ${t.mission}</div>
+        <div class="addr">📍 ${esc(d.addr)}</div>
+        <div class="acts">
+          <label><input type="checkbox" data-done="${d.id}" ${done[d.id] ? "checked" : ""}> 다녀왔어요</label>
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lng}" target="_blank" rel="noopener">길찾기 ↗</a>
+          <a href="${esc(d.url)}" target="_blank" rel="noopener">원문 자료 ↗</a>
+          <button data-swap="${i}">🔄 다른 곳으로</button><button data-del="${i}">✕ 빼기</button>
+        </div></div></article>`;
+  }).join("");
+  const total = driveMin + plan.length * VISIT_MIN, nDone = plan.filter(d => done[d.id]).length;
+  $("#summary").innerHTML = `
+    <div class="stat"><b>${plan.length}곳</b><small>오늘의 탐방지</small></div>
+    <div class="stat"><b>약 ${driveKm.toFixed(0)}km</b><small>총 이동거리 (어림)</small></div>
+    <div class="stat"><b>약 ${fmtMin(total)}</b><small>이동 ${fmtMin(driveMin)} + 관람 ${plan.length}×${VISIT_MIN}분</small></div>
+    <div class="stat"><b>${nDone} / ${plan.length} 완료</b><div class="bar"><i style="width:${nDone / plan.length * 100}%"></i></div></div>`;
+  $("#cards").innerHTML = cards + `<div class="tips">💡 ${AGE[$("#age").value].stops <= 3 ? "어린 아이는 낮잠과 간식 시간을 넉넉히 잡고, 마음에 드는 곳에서 오래 놀아도 괜찮아요." : "곳마다 ‘탐방 미션’을 하나씩 해 보면 아이들이 더 즐거워해요. 휴관일·개방 시간은 출발 전에 확인하세요."}</div>`;
+  drawMap();
+}
+
+function make(jitter) {
+  $("#msg").textContent = "";
+  plan = pick(+$("#stops").value, jitter);
+  const want = +$("#stops").value;
+  if (plan.length && plan.length < want) $("#msg").textContent = `조건에 맞는 장소가 ${plan.length}곳뿐이에요.`;
+  draw();
+}
+async function resolveStart() {
+  const v = $("#start").value;
+  if (v !== "me") { start = STARTS[v]; return; }
+  try {
+    const p = await new Promise((ok, no) => navigator.geolocation.getCurrentPosition(ok, no, { timeout: 8000 }));
+    start = { name: "내 위치", lat: p.coords.latitude, lng: p.coords.longitude };
+  } catch (e) {
+    $("#msg").textContent = "위치를 가져오지 못해 제주국제공항 기준으로 만들었어요."; start = STARTS.air;
+  }
+}
+async function run(jitter) { await resolveStart(); const m = $("#msg").textContent; make(jitter); if (m) $("#msg").textContent = m; }
+
+$("#age").addEventListener("change", () => { $("#stops").value = AGE[$("#age").value].stops; });
+$("#make").addEventListener("click", () => run(false));
+$("#again").addEventListener("click", () => run(true));
+$("#print").addEventListener("click", () => window.print());
+$("#cards").addEventListener("click", e => {
+  const t = e.target;
+  if (t.dataset.swap) swap(+t.dataset.swap);
+  else if (t.dataset.del) { plan.splice(+t.dataset.del, 1); draw(); }
+  else if (t.dataset.more !== undefined) {
+    const s = t.previousElementSibling, open = t.dataset.open !== "1";
+    s.textContent = open ? s.dataset.full : s.dataset.short; t.dataset.open = open ? "1" : "0"; t.textContent = open ? "접기 ▴" : "더 읽기 ▾";
+  } else if (t.closest("[data-focus]")) {
+    const i = +t.closest("[data-focus]").dataset.focus; map.setView([plan[i].lat, plan[i].lng], 14); markers[i].openTooltip();
+  }
+});
+$("#cards").addEventListener("change", e => {
+  const id = e.target.dataset.done; if (!id) return;
+  if (e.target.checked) done[id] = 1; else delete done[id];
+  saveDone(); draw();
+});
+$("#age").dispatchEvent(new Event("change"));
+</script>
+</body>
+</html>
