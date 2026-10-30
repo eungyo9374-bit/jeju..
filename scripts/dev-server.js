@@ -4,9 +4,9 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadCulture } from "./lib/culture.js";
+import { loadCulture } from "../lib/culture.js";
 
-const ROOT = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = process.env.PORT || 3000;
 const CACHE_MS = 60 * 60 * 1000;
 

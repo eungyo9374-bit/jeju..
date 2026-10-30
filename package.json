@@ -2,6 +2,6 @@
   "name": "jeju-culture",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node server.js" },
+  "scripts": { "start": "node scripts/dev-server.js" },
   "engines": { "node": ">=18" }
 }
